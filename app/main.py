@@ -89,7 +89,7 @@ def crear_formula(formula: FormulaCreate, db: Session = Depends(get_db)):
 
     nueva_formula = Formula(
         nombre = formula.nombre,
-        medicamentos=[{"medicamento_id": item.medicamento_id, "cantidad": item.cantidad} for item in formula.medicamentos],
+        medicamentos=[{"medicamento_id": item.medicamento_id, "cantidad": item.cantidad,"nombre": item.nombre, "gramaje": item.gramaje} for item in formula.medicamentos],
         estado="Solicitado"  
     )
     db.add(nueva_formula)
