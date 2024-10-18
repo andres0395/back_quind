@@ -1,17 +1,31 @@
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
-from app.models import Medicamento, Pedido, EstadoEnvio, Formula
+from app.models import Medicamento, Pedido, EstadoEnvio, Formula, PedidoSchema
 from app.database import  get_db
 from app.schemas import MedicamentoCreate, PedidoCreate, FormulaCreate, EstadoFormulaUpdate
+from fastapi.middleware.cors import CORSMiddleware
+from typing import List
+
 app = FastAPI()
 
+origins = [
+    "http://localhost:4200", 
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,  
+    allow_credentials=True,
+    allow_methods=["*"],  
+    allow_headers=["*"],  
+)
 
 @app.get("/medicamentos/")
 def obtener_todos_los_medicamentos(db: Session = Depends(get_db)):
     medicamentos = db.query(Medicamento).all()
     return medicamentos
 
-@app.get("/pedidos/")
+@app.get("/pedidos/", response_model=List[PedidoSchema])
 def obtener_todos_los_pedidos(db: Session = Depends(get_db)):
     pedidos = db.query(Pedido).all()
     return pedidos

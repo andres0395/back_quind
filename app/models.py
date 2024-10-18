@@ -4,6 +4,7 @@ from sqlalchemy.dialects.postgresql import JSON
 from sqlalchemy.orm import relationship
 from app.database import Base
 import enum
+from pydantic import BaseModel
 
 class EstadoEnvio(enum.Enum):
     solicitado = "Solicitado"
@@ -35,3 +36,18 @@ class Pedido(Base):
 
     medicamento = relationship("Medicamento")
 
+class MedicamentoSchema(BaseModel):
+    id: int
+    nombre: str  
+    class Config:
+        orm_mode = True
+
+class PedidoSchema(BaseModel):
+    id: int
+    solicitante: str
+    medicamento: MedicamentoSchema  
+    cantidad: int
+    estado: EstadoEnvio
+
+    class Config:
+        orm_mode = True
