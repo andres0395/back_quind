@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
-from app.models import Medicamento, Pedido, EstadoEnvio, Formula, PedidoSchema
+from app.models import Medicamento, Pedido, EstadoEnvio, Formula, PedidoSchema, FormulaSchema
 from app.database import  get_db
 from app.schemas import MedicamentoCreate, PedidoCreate, FormulaCreate, EstadoFormulaUpdate
 from fastapi.middleware.cors import CORSMiddleware
@@ -30,20 +30,22 @@ def obtener_todos_los_pedidos(db: Session = Depends(get_db)):
     pedidos = db.query(Pedido).all()
     return pedidos
 
-@app.get("/formulas/")
+@app.get("/formulas/", response_model=List[FormulaSchema])
 def obtener_todas_las_formulas(db: Session = Depends(get_db)):
     formulas = db.query(Formula).all()
     return formulas
 
 
-@app.put("/pedidos/{pedido_id}/recibido")
-def actualizar_estado_a_recibido(pedido_id: int, db: Session = Depends(get_db)):
+@app.put("/pedidos/{pedido_id}/recibido/{medicamento_id}")
+def actualizar_estado_a_recibido(pedido_id: int, medicamento_id: int, db: Session = Depends(get_db)):
+    medicamento = db.query(Medicamento).filter(Medicamento.id == medicamento_id).first()
     pedido = db.query(Pedido).filter(Pedido.id == pedido_id).first()
     if not pedido:
         return {"error": "Pedido no encontrado"}
     pedido.estado = EstadoEnvio.recibido
+    medicamento.existencia += pedido.cantidad
     db.commit()
-    return {"message": "Pedido actualizado a recibido"}
+    return {"message": "Pedido actualizado a recibido y cantidad de medicamentos actualizada"}
 
 @app.post("/medicamentos/")
 def crear_medicamento(medicamento: MedicamentoCreate, db: Session = Depends(get_db)):
@@ -76,36 +78,27 @@ def crear_pedido(pedido: PedidoCreate, db: Session = Depends(get_db)):
         cantidad=pedido.cantidad
     )
     
-    medicamento.existencia += pedido.cantidad
-    
     db.add(nuevo_pedido)
     db.commit()
     db.refresh(nuevo_pedido)
     
-    return {"message": "Pedido creado y cantidad de medicamentos actualizada", "pedido": nuevo_pedido}
+    return {"message": "Pedido creado ", "pedido": nuevo_pedido}
 
 @app.post("/formulas/")
 def crear_formula(formula: FormulaCreate, db: Session = Depends(get_db)):
-    medicamentos_a_actualizar = []
-
-    for item in formula.medicamentos:
-        medicamento = db.query(Medicamento).filter(Medicamento.id == item.medicamento_id).first()
-        if not medicamento:
-            raise HTTPException(status_code=404, detail=f"Medicamento con id {item.medicamento_id} no encontrado")
-        
-        if medicamento.existencia < item.cantidad:
-            raise HTTPException(status_code=400, detail=f"El medicamento {medicamento.nombre} tiene existencia insuficiente")
-        
-        medicamentos_a_actualizar.append((medicamento, item.cantidad))
-
-    for medicamento, cantidad in medicamentos_a_actualizar:
-        medicamento.existencia -= cantidad
-
+    medicamento = db.query(Medicamento).filter(Medicamento.id == formula.medicamento_id).first()
+    if not medicamento:
+        raise HTTPException(status_code=404, detail="Medicamento no encontrado")
+    
+    if medicamento.existencia < formula.cantidad:
+        raise HTTPException(status_code=400, detail=f"El medicamento {medicamento.nombre} tiene existencia insuficiente")
+    
     nueva_formula = Formula(
         nombre = formula.nombre,
-        medicamentos=[{"medicamento_id": item.medicamento_id, "cantidad": item.cantidad,"nombre": item.nombre, "gramaje": item.gramaje} for item in formula.medicamentos],
-        estado="Solicitado"  
+        medicamento_id = formula.medicamento_id,
+        cantidad = formula.cantidad  
     )
+    medicamento.existencia -= formula.cantidad
     db.add(nueva_formula)
     db.commit()
     db.refresh(nueva_formula)

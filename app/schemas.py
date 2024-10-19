@@ -18,7 +18,8 @@ class MedicamentoEnFormula(BaseModel):
 
 class FormulaCreate(BaseModel):
     nombre: str
-    medicamentos: List[MedicamentoEnFormula]
+    medicamento_id: int
+    cantidad: int
     
 class EstadoFormulaUpdate(BaseModel):
     estado: EstadoEnvio  

@@ -23,8 +23,10 @@ class Formula(Base):
     __tablename__ = 'formulas'
     id = Column(Integer, primary_key=True, index=True)
     nombre = Column(String)
-    medicamentos = Column(JSON)  # Array de objetos con id, cantidad, gramaje
+    medicamento_id = Column(Integer, ForeignKey('medicamentos.id'))
+    cantidad = Column(Integer)
     estado = Column(Enum(EstadoEnvio), default=EstadoEnvio.solicitado)
+    medicamento = relationship("Medicamento")
 
 class Pedido(Base):
     __tablename__ = 'pedidos'
@@ -49,5 +51,17 @@ class PedidoSchema(BaseModel):
     cantidad: int
     estado: EstadoEnvio
 
+    class Config:
+        orm_mode = True
+        
+        
+class FormulaSchema(BaseModel):
+    id: int
+    nombre: str
+    medicamento_id :int
+    cantidad: int
+    estado: EstadoEnvio
+    medicamento: MedicamentoSchema
+    
     class Config:
         orm_mode = True
