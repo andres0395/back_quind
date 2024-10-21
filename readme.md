@@ -9,6 +9,9 @@
    o
    .\env\Scripts\activate
    pip install fastapi[all] sqlalchemy psycopg2 alembic
+   pip install pytest pytest-cov
+   pip install fastapi[testclient]
+
 
 ### Inicialización 
 ````   uvicorn app.main:app --reload    ````
@@ -19,6 +22,9 @@
 3. SQLAlchemy
 4. PostgreSQL
 5. alembic
+6. pytest 
+7. pytest-cov
+8. testclient
 
 # para la configuracion de la base de datos cambiar esta variable DATABASE_URL ="postgresql://postgres:1234@localhost/farmacia_db" en el archivo database.py
 
@@ -50,3 +56,8 @@ target_metadata = Base.metadata
 ### Esto ejecutará todas las migraciones pendientes y actualizará la base de datos según los cambios realizados en los modelos.
 
 ### el cors esta configurado para que solo deje acceder al localhost:4200 si desean cambiarlo deben modificar la propiedad origins por el que deseen
+
+para el correcto funcionamiento del back se recomienda en el entorno virtual 
+en el caso de las pruebas unitarias se recomienda cambiar el nombre del medicamento por cada prueba de lo contrario
+causara un error debido a que insertara el nombre en la base de datos y si intententa ingresar el mismo de nuevo no podra
+tambien revisar que existan medicamentos ya que es necesario para ejecutar las pruebas con las cantidades correctas para su correcto funcionamiento
